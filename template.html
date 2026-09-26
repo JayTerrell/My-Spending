@@ -15,7 +15,7 @@
   --s5: #e87ba4; --s6: #008300; --s7: #4a3aa7; --s8: #e34948;
   --div-pos: #d03b3b; --div-neg: #2a78d6; --mid: #f0efec;
   --q1: #cde2fb; --q2: #9ec5f4; --q3: #6da7ec; --q4: #3987e5; --q5: #256abf; --q6: #184f95; --q7: #0d366b;
-  --accent: #2a78d6;
+  --accent: #2a78d6; --fixed: #b3b1a8;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -28,7 +28,7 @@
     --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
     --div-pos: #e66767; --div-neg: #3987e5; --mid: #383835;
     --q1: #10233b; --q2: #104281; --q3: #184f95; --q4: #256abf; --q5: #3987e5; --q6: #6da7ec; --q7: #b7d3f6;
-    --accent: #3987e5;
+    --accent: #3987e5; --fixed: #5c5b57;
   }
 }
 :root[data-theme="dark"] {
@@ -41,7 +41,7 @@
   --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
   --div-pos: #e66767; --div-neg: #3987e5; --mid: #383835;
   --q1: #10233b; --q2: #104281; --q3: #184f95; --q4: #256abf; --q5: #3987e5; --q6: #6da7ec; --q7: #b7d3f6;
-  --accent: #3987e5;
+  --accent: #3987e5; --fixed: #5c5b57;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -62,6 +62,8 @@ h1 { font-size: 22px; line-height: 1.2; margin: 0; font-weight: 650; letter-spac
 .tabs button[aria-selected="true"], .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--ring); }
 .tabs button:focus-visible, .seg button:focus-visible, select:focus-visible, input:focus-visible, .chart:focus-visible, .lg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .filters { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin: 6px 0 16px; }
+.gbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; background: var(--surface); box-shadow: 0 0 0 1px var(--ring); border-radius: 12px; padding: 10px 14px; margin: 0 0 14px; }
+.gbar .t { font-weight: 650; }
 .filters label { display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-weight: 550; min-width: 0; max-width: 100%; }
 .filters select { min-width: 0; max-width: 100%; flex: 1 1 auto; }
 select, input[type="search"] {
@@ -165,13 +167,19 @@ ul.recs { margin: 0; padding-left: 20px; } ul.recs li { margin: 6px 0; color: va
     </div>
   </header>
 
+  <div class="gbar">
+    <span class="t">Rent + car note</span>
+    <div class="seg" id="fixed-seg" role="group" aria-label="Rent and car note"><button type="button" aria-pressed="true" data-v="out">Excluded</button><button type="button" aria-pressed="false" data-v="in">Included</button></div>
+    <span class="note" id="fixed-note"></span>
+  </div>
+
   <!-- ======================= DASHBOARD ======================= -->
   <section id="panel-dash" role="tabpanel" aria-labelledby="tab-dash">
     <div class="filters">
       <label>Period
         <select id="f-period"></select>
       </label>
-      <label>Spending
+      <label>Group
         <select id="f-group"></select>
       </label>
       <span class="note" id="f-note"></span>
@@ -181,7 +189,7 @@ ul.recs { margin: 0; padding-left: 20px; } ul.recs li { margin: 6px 0; color: va
 
     <div class="grid">
       <div class="card span-8">
-        <div class="card-h"><div><h2>Spending by year</h2><div class="desc">Totals per calendar year with year-over-year change. Lighter bars are years with incomplete account coverage or partial dates.</div></div>
+        <div class="card-h"><div><h2>Spending by year</h2><div class="desc">Each year split into rent + car note and everything else. Labels show the total and the rent + car note share. Lighter bars are years with incomplete account coverage or partial dates. This chart always shows both.</div></div>
           <div class="seg" data-view="year"><button aria-pressed="true" data-v="chart">Chart</button><button aria-pressed="false" data-v="table">Table</button></div></div>
         <div id="c-year"></div>
       </div>
@@ -264,7 +272,7 @@ ul.recs { margin: 0; padding-left: 20px; } ul.recs li { margin: 6px 0; color: va
         <div id="d-inc"></div>
       </div>
       <div class="card span-6">
-        <div class="card-h"><div><h2>Essentials vs. discretionary</h2><div class="desc">Essentials are rent, car payments, gas, tolls, groceries, utilities, phone, insurance, medical and education. Everything else is discretionary.</div></div></div>
+        <div class="card-h"><div><h2>Essentials vs. discretionary</h2><div class="desc"><span id="ess-desc">Essentials are rent, car note, gas, tolls, groceries, utilities, phone, insurance, medical and education.</span> Everything else is discretionary.</div></div></div>
         <div id="d-ess"></div>
       </div>
 
@@ -303,21 +311,21 @@ ul.recs { margin: 0; padding-left: 20px; } ul.recs li { margin: 6px 0; color: va
         <div id="d-fees"></div>
       </div>
       <div class="card span-6">
-        <div class="card-h"><div><h2>Seasonality</h2><div class="desc">Average spending by calendar month, 2023–2025 (full-coverage years), excluding rent and car payments.</div></div></div>
+        <div class="card-h"><div><h2>Seasonality</h2><div class="desc" id="d-season-desc"></div></div></div>
         <div id="d-season"></div>
       </div>
 
       <div class="card span-6">
-        <div class="card-h"><div><h2>Typical purchase size</h2><div class="desc">Median and 90th-percentile purchase amount per year.</div></div></div>
+        <div class="card-h"><div><h2>Typical purchase size</h2><div class="desc" id="d-size-desc"></div></div></div>
         <div id="d-size"></div>
       </div>
       <div class="card span-6">
-        <div class="card-h"><div><h2>Vendor loyalty</h2><div class="desc">How many different places you spend each year, and how concentrated it is.</div></div></div>
+        <div class="card-h"><div><h2>Vendor loyalty</h2><div class="desc">How many different places you spend each year, and how concentrated it is. Always excludes rent and car note.</div></div></div>
         <div id="d-loyal" class="tbl-wrap"></div>
       </div>
 
       <div class="card">
-        <div class="card-h"><div><h2>Biggest months and what drove them</h2><div class="desc">The ten highest-spending months, with the largest charges in each.</div></div></div>
+        <div class="card-h"><div><h2>Biggest months and what drove them</h2><div class="desc">The ten highest-spending months without rent and car note, with the largest charges in each.</div></div></div>
         <div id="d-peaks" class="tbl-wrap"></div>
       </div>
 
@@ -376,13 +384,17 @@ const S = DATA.stats;
 const GROUPS = DATA.groups;
 const GCOLOR = {}; GROUPS.forEach((g, i) => GCOLOR[g] = `var(--s${i + 1})`);
 const ESS = new Set(DATA.essential);
-const FIXED = new Set(["Rent & Housing", "Car Payments"]);
+const FIXED = new Set(["Rent & Housing", "Car Note"]);
+const isFixed = r => FIXED.has(r.cat);
 const TX = DATA.tx.map(r => {
   const d = r[0], cat = DATA.cats[r[2]];
   const dt = parseD(d);
   return { d, y: +d.slice(0, 4), m: +d.slice(5, 7) - 1, ym: d.slice(0, 7), day: +d.slice(8, 10), dow: dt.getUTCDay(), t: dt.getTime(),
     amt: r[1], cat, grp: DATA.cat2group[cat], vendor: DATA.vendors[r[3]], acct: DATA.accounts[r[4]], desc: r[5] };
 });
+const TXNF = TX.filter(r => !isFixed(r));
+let EXCL = true; try { EXCL = localStorage.getItem("spend-fixed") !== "in"; } catch (e) {}
+const V = () => EXCL ? TXNF : TX;          // transactions in view, per the rent + car note switch
 const INCOME = DATA.income.map(r => ({ d: r[0], y: +r[0].slice(0, 4), ym: r[0].slice(0, 7), amt: r[1], name: r[2] }));
 const FIRST = S.first, LAST = S.last;
 const FIRST_T = parseD(FIRST).getTime(), LAST_T = parseD(LAST).getTime();
@@ -495,7 +507,7 @@ function xyChart(host, cfg) {
     if ((cfg.xAlign === "end" ? (n - 1 - i) : i) % every) continue;
     const t = sv("text", { x: X(i) + band / 2, y: H - 8, "text-anchor": "middle" }); t.textContent = xl(i); svg.appendChild(t);
   }
-  const hl = sv("rect", { class: "hl", y: mt, height: ph, width: band, x: -999, rx: 4 }); svg.appendChild(hl);
+  const hl = sv("rect", { class: "hl", y: mt, height: ph, width: band, x: -99999, rx: 4 }); svg.appendChild(hl);
   // bars
   const zero = Y(Math.max(yLo, Math.min(0, yHi)));
   if (bars.length) {
@@ -549,14 +561,15 @@ function xyChart(host, cfg) {
     }
   }
   // hover layer
-  const cross = sv("line", { y1: mt, y2: mt + ph, stroke: "var(--axis)", "stroke-width": 1, x1: -9, x2: -9 }); svg.appendChild(cross);
-  const dots = lines.map(s => { const c = sv("circle", { r: 4, fill: s.color, stroke: "var(--surface)", "stroke-width": 2, cx: -99, cy: -99 }); svg.appendChild(c); return c; });
+  const cross = sv("line", { y1: mt, y2: mt + ph, stroke: "var(--axis)", "stroke-width": 1, x1: 0, x2: 0, visibility: "hidden" }); svg.appendChild(cross);
+  const dots = lines.map(s => { const c = sv("circle", { r: 4, fill: s.color, stroke: "var(--surface)", "stroke-width": 2, cx: 0, cy: 0, visibility: "hidden" }); svg.appendChild(c); return c; });
+  const vis = (e, on) => e.setAttribute("visibility", on ? "visible" : "hidden");
   let cur = -1;
   const show = (i, px, py) => {
     cur = i;
-    if (bars.length) { hl.setAttribute("x", X(i)); } else { hl.setAttribute("x", -999); }
-    if (lines.length) { const cx = X(i) + band / 2; cross.setAttribute("x1", cx); cross.setAttribute("x2", cx);
-      lines.forEach((s, k) => { const v = s.values[i]; if (v == null || !isFinite(v)) { dots[k].setAttribute("cx", -99); return; } dots[k].setAttribute("cx", cx); dots[k].setAttribute("cy", Y(v)); }); }
+    if (bars.length) { hl.setAttribute("x", X(i)); } else { hl.setAttribute("x", -99999); }
+    if (lines.length) { const cx = X(i) + band / 2; cross.setAttribute("x1", cx); cross.setAttribute("x2", cx); vis(cross, true);
+      lines.forEach((s, k) => { const v = s.values[i]; if (v == null || !isFinite(v)) { vis(dots[k], false); return; } dots[k].setAttribute("cx", cx); dots[k].setAttribute("cy", Y(v)); vis(dots[k], true); }); }
     const rows = [];
     const f = cfg.yFmt || (v => money(v));
     for (const s of bars) { const v = s.values[i]; if (v == null || (!v && cfg.stacked)) continue; rows.push({ name: s.name, color: cfg.barColor ? cfg.barColor(i, 0, v) : s.color, value: f(v) }); }
@@ -565,7 +578,7 @@ function xyChart(host, cfg) {
     const scale = box.clientWidth / W;
     showTip(box, (px ?? X(i) + band / 2) * scale, (py ?? mt + 20) * scale, cfg.tipTitle ? cfg.tipTitle(i) : String(cfg.labels[i]), rows, cfg.tipFoot ? cfg.tipFoot(i) : null);
   };
-  const clear = () => { cur = -1; hl.setAttribute("x", -999); cross.setAttribute("x1", -9); cross.setAttribute("x2", -9); dots.forEach(d => d.setAttribute("cx", -99)); hideTip(); };
+  const clear = () => { cur = -1; hl.setAttribute("x", -99999); vis(cross, false); dots.forEach(d => vis(d, false)); hideTip(); };
   box.addEventListener("pointermove", e => {
     const r = box.getBoundingClientRect(), sc = W / r.width, px = (e.clientX - r.left) * sc, py = (e.clientY - r.top) * sc;
     const i = Math.floor((px - ml) / band); if (i < 0 || i >= n) { clear(); return; } show(i, px, py);
@@ -638,7 +651,7 @@ function by(rows, keyFn) { const m = new Map(); rows.forEach(r => { const k = ke
 const fPeriod = $("#f-period"), fGroup = $("#f-group");
 [["all", "All time"], ["l12", "Last 12 months"], ["l24", "Last 24 months"], ["complete", `${COMPLETE_FROM} onward (all accounts linked)`], ...YEARS.slice().reverse().map(y => [String(y), String(y)])]
   .forEach(([v, t]) => fPeriod.appendChild(el("option", { value: v }, t)));
-[["all", "All spending"], ["dayto", "Day-to-day (no rent or car payments)"], ...GROUPS.map(g => [g, g])]
+[["all", "All groups"], ...GROUPS.map(g => [g, g])]
   .forEach(([v, t]) => fGroup.appendChild(el("option", { value: v }, t)));
 fPeriod.value = "all";
 
@@ -649,9 +662,10 @@ function periodRange() {
   if (v === "l12" || v === "l24") { const d = new Date(LAST_T); d.setUTCMonth(d.getUTCMonth() - (v === "l12" ? 12 : 24)); d.setUTCDate(d.getUTCDate() + 1); return [d.toISOString().slice(0, 10), LAST]; }
   return [`${v}-01-01`, `${v}-12-31`];
 }
-function filtered() {
-  const [a, b] = periodRange(), g = fGroup.value;
-  return TX.filter(r => r.d >= a && r.d <= b && (g === "all" || (g === "dayto" ? !FIXED.has(r.cat) : r.grp === g)));
+const inGroup = r => fGroup.value === "all" || r.grp === fGroup.value;
+function filtered(base = V()) {
+  const [a, b] = periodRange();
+  return base.filter(r => r.d >= a && r.d <= b && inGroup(r));
 }
 function monthsIn() { const [a, b] = periodRange(); return ALL_MONTHS.filter(m => m >= a.slice(0, 7) && m <= b.slice(0, 7)); }
 function yearsIn() { const [a, b] = periodRange(); return YEARS.filter(y => y >= +a.slice(0, 4) && y <= +b.slice(0, 4)); }
@@ -668,43 +682,52 @@ function renderDashboard() {
 function renderKpis() {
   const host = $("#kpis"); host.replaceChildren();
   const total = sum(ROWS.map(r => r.amt)), days = periodDays(), months = days / 30.4375;
-  const cats = [...by(ROWS, r => r.cat)].sort((x, y) => y[1] - x[1]);
-  const vens = [...by(ROWS, r => r.vendor)].sort((x, y) => y[1] - x[1]);
+  const nf = ROWS.filter(r => !isFixed(r)), nfTotal = sum(nf.map(r => r.amt));
+  const cats = [...by(nf, r => r.cat)].sort((x, y) => y[1] - x[1]);
+  const vens = [...by(nf, r => r.vendor)].sort((x, y) => y[1] - x[1]);
   const purchases = ROWS.filter(r => r.amt > 0);
   const k = (l, v, d, sm) => { const c = el("div", { class: "kpi" }); c.append(el("div", { class: "l" }, l), el("div", { class: "v" + (sm ? " sm" : "") }, v)); if (d) c.appendChild(el("div", { class: "d" }, d)); host.appendChild(c); };
-  k("Total spent", money(total), `${days.toLocaleString()} days`);
+  k(EXCL ? "Spent (excl. rent + car note)" : "Total spent", money(total), `${days.toLocaleString()} days`);
   k("Average per month", money(total / months), `${money(total / days)} per day`);
   k("Purchases", purchases.length.toLocaleString(), `${(purchases.length / months).toFixed(0)} per month`);
   k("Average purchase", money(sum(purchases.map(r => r.amt)) / Math.max(1, purchases.length), 2), `median ${money(quantile(purchases.map(r => r.amt), 0.5), 2)}`);
-  if (cats[0]) k("Top category", cats[0][0], `${money(cats[0][1])} · ${(cats[0][1] / total * 100).toFixed(0)}%`, true);
-  if (vens[0]) k("Top vendor", vens[0][0], `${money(vens[0][1])}`, true);
+  if (cats[0]) k("Top category (excl. rent + car note)", cats[0][0], `${money(cats[0][1])} · ${(cats[0][1] / nfTotal * 100).toFixed(0)}% of the rest`, true);
+  if (vens[0]) k("Top vendor (excl. rent + car note)", vens[0][0], `${money(vens[0][1])} · ${vens[0][1] > 0 ? (ROWS.filter(r => r.vendor === vens[0][0] && r.amt > 0).length) : 0} visits`, true);
 }
 
 function renderYear() {
   const host = $("#c-year"); host.replaceChildren();
-  const ys = yearsIn(); const tot = ys.map(y => sum(ROWS.filter(r => r.y === y).map(r => r.amt)));
-  const yoy = tot.map((v, i) => i && tot[i - 1] ? v / tot[i - 1] - 1 : null);
+  const rows = filtered(TX); // always both parts, whatever the switch says
+  const ys = yearsIn();
+  const fx = ys.map(y => sum(rows.filter(r => r.y === y && isFixed(r)).map(r => r.amt)));
+  const ot = ys.map(y => sum(rows.filter(r => r.y === y && !isFixed(r)).map(r => r.amt)));
+  const tot = ys.map((_, i) => fx[i] + ot[i]);
+  const share = i => tot[i] ? fx[i] / tot[i] : 0;
+  const yoyO = ot.map((v, i) => i && ot[i - 1] ? v / ot[i - 1] - 1 : null);
   if (VIEW.year === "table") {
-    table(host, ["Year", "Total", "Days tracked", "Avg / month", "YoY change", "Coverage"],
-      ys.map((y, i) => [y, money(tot[i]), yearDays(y), money(tot[i] / yearDays(y) * 30.4375), yoy[i] == null ? "–" : pct(yoy[i]), y < COMPLETE_FROM ? "Partial accounts" : yearDays(y) < 360 ? "Partial year" : "Complete"]),
-      { num: [0, 1, 1, 1, 1, 0] });
+    table(host, ["Year", "Everything else", "Rent + car note", "Rent + car note %", "Total", "Everything else YoY", "Else / month", "Coverage"],
+      ys.map((y, i) => [y, money(ot[i]), money(fx[i]), (share(i) * 100).toFixed(0) + "%", money(tot[i]), yoyO[i] == null ? "–" : pct(yoyO[i]), money(ot[i] / yearDays(y) * 30.4375), y < COMPLETE_FROM ? "Partial accounts" : yearDays(y) < 360 ? "Partial year" : "Complete"]),
+      { num: [0, 1, 1, 1, 1, 1, 1, 0] });
     return;
   }
   xyChart(host, {
-    labels: ys.map(String), bars: [{ name: "Spending", color: "var(--s1)", values: tot }], height: 260,
+    labels: ys.map(String), stacked: true, height: 280,
+    bars: [{ name: "Everything else", color: "var(--s1)", values: ot }, { name: "Rent + car note", color: "var(--fixed)", values: fx }],
     dimmed: i => partialYear(ys[i]),
-    barLabel: i => compact(tot[i]) + (yoy[i] == null ? "" : " " + pct(yoy[i])),
+    barLabel: i => compact(tot[i]) + (fx[i] > 0 ? ` · ${(share(i) * 100).toFixed(0)}%` : ""),
+    yFmt: v => money(v),
     tipTitle: i => `${ys[i]}${yearNote(ys[i]) ? " (" + yearNote(ys[i]) + ")" : ""}`,
-    tipFoot: i => [yoy[i] == null ? null : `${pct(yoy[i], 1)} vs ${ys[i] - 1}`, `Avg ${money(tot[i] / yearDays(ys[i]) * 30.4375)}/month`, ys[i] < COMPLETE_FROM ? "Partial account coverage" : null].filter(Boolean).join(" · "),
-    aria: "Column chart of spending by year",
+    tipFoot: i => [`Rent + car note ${(share(i) * 100).toFixed(0)}% · everything else ${(100 - share(i) * 100).toFixed(0)}%`,
+      yoyO[i] == null ? null : `Everything else ${pct(yoyO[i], 1)} vs ${ys[i] - 1}`, ys[i] < COMPLETE_FROM ? "Partial account coverage" : null].filter(Boolean).join(" · "),
+    aria: "Stacked column chart of spending by year: rent plus car note versus everything else",
   });
 }
 
 function renderYtd() {
   const host = $("#c-ytd"); host.replaceChildren();
-  const md = LAST.slice(5); const g = fGroup.value;
+  const md = LAST.slice(5);
   $("#ytd-desc").textContent = `January 1 through ${MONTHS[+md.slice(0, 2) - 1]} ${+md.slice(3)} of each year, so ${LAST_Y} can be compared fairly.`;
-  const rows = TX.filter(r => r.d.slice(5) <= md && (g === "all" || (g === "dayto" ? !FIXED.has(r.cat) : r.grp === g)));
+  const rows = V().filter(r => r.d.slice(5) <= md && inGroup(r));
   const ys = YEARS.filter(y => y > FIRST_Y);
   const tot = ys.map(y => sum(rows.filter(r => r.y === y).map(r => r.amt)));
   const cur = tot[tot.length - 1], prev = tot[tot.length - 2];
@@ -785,7 +808,7 @@ function renderMom() {
 
 function renderVel() {
   const host = $("#c-vel"), kh = $("#vel-kpis"); host.replaceChildren(); kh.replaceChildren();
-  const g = fGroup.value; const all = TX.filter(r => g === "all" || (g === "dayto" ? !FIXED.has(r.cat) : r.grp === g));
+  const all = V().filter(inGroup);
   const since = days => sum(all.filter(r => r.t > LAST_T - days * dayMs).map(r => r.amt));
   const k = (l, v, d, cls) => { const c = el("div", { class: "kpi" }); c.append(el("div", { class: "l" }, l), el("div", { class: "v" }, v)); if (d) c.appendChild(el("div", { class: "d " + (cls || "") }, d)); kh.appendChild(c); };
   const d30 = since(30), d90 = since(90), d365 = since(365), dPrev365 = sum(all.filter(r => r.t <= LAST_T - 365 * dayMs && r.t > LAST_T - 730 * dayMs).map(r => r.amt));
@@ -925,7 +948,8 @@ function renderTx(resetPage = true) {
 }
 
 // ------------------------------------------------------------------ DEEP DIVE
-const FULL = TX.filter(r => r.y >= COMPLETE_FROM);
+let FULL = TXNF.filter(r => r.y >= COMPLETE_FROM);          // view rows since COMPLETE_FROM (reset in renderDeep)
+const FULL_ALL = TX.filter(r => r.y >= COMPLETE_FROM);
 const fullYears = YEARS.filter(y => y >= COMPLETE_FROM);
 const fullDays = Math.round((LAST_T - Date.UTC(COMPLETE_FROM, 0, 1)) / dayMs) + 1;
 const fullMonths = fullDays / 30.4375;
@@ -937,24 +961,27 @@ const isDiscretionary = r => !ESS.has(r.cat);
 let deepDone = false;
 function renderDeep() {
   deepDone = true;
+  FULL = V().filter(r => r.y >= COMPLETE_FROM);
+  const XL = EXCL ? " (excl. rent + car note)" : "";
   $("#deep-note").textContent = `Most of this page uses ${COMPLETE_FROM}–${LAST_Y}, when all of your cards and bank accounts were linked (${fullMonths.toFixed(0)} months). Before that only the USAA debit account was tracked, so earlier years understate your real spending.`;
   const recs = [], F = [];
   const add = (h, big, p) => F.push({ h, big, p });
   const total = sum(FULL.map(r => r.amt)), perMo = total / fullMonths;
 
   // 1 overall
-  const y23 = yTotal(TX, 2023), y25 = yTotal(TX, 2025);
-  add("Monthly run-rate", money(perMo), `Average monthly spending since ${COMPLETE_FROM}. Full years: ${fullYears.filter(y => yearDays(y) >= 360).map(y => `${y} ${compact(yTotal(TX, y))}`).join(", ")}. Spending ${y25 < y23 ? "dropped" : "rose"} ${Math.abs((y25 / y23 - 1) * 100).toFixed(0)}% from 2023 to 2025.`);
+  const y23 = yTotal(V(), 2023), y25 = yTotal(V(), 2025);
+  add("Monthly run-rate" + XL, money(perMo), `Average monthly spending since ${COMPLETE_FROM}${EXCL ? `, not counting rent and car note (${money(sum(FULL_ALL.filter(isFixed).map(r => r.amt)) / fullMonths)}/month more)` : ""}. Full years: ${fullYears.filter(y => yearDays(y) >= 360).map(y => `${y} ${compact(yTotal(V(), y))}`).join(", ")}. Spending ${y25 < y23 ? "dropped" : "rose"} ${Math.abs((y25 / y23 - 1) * 100).toFixed(0)}% from 2023 to 2025.`);
 
   // 2 housing
   const rentByYear = fullYears.map(y => { const rows = TX.filter(r => r.y === y && r.cat === "Rent & Housing" && /Apartments|Ranch/.test(r.vendor)); const mm = by(rows, r => r.ym); return { y, avg: quantile([...mm.values()].filter(v => v > 500), 0.5), n: mm.size }; }).filter(r => r.avg > 0);
   const rFirst = rentByYear[0], rLast = rentByYear[rentByYear.length - 1];
-  const housingShare = catTotal(FULL, "Rent & Housing") / total;
-  add("Rent is your biggest bill", `${(housingShare * 100).toFixed(0)}% of spending`, `Typical monthly rent went from about ${money(rFirst.avg)} in ${rFirst.y} to ${money(rLast.avg)} in ${rLast.y} (${pct(rLast.avg / rFirst.avg - 1)}). ${rLast.avg > rFirst.avg ? "Moving to Central Square in mid-2025 is what raised it." : ""} Rent alone is about ${(rLast.avg / (total / fullMonths) * 100).toFixed(0)}% of a typical month's spending.`);
+  const allTotal = sum(FULL_ALL.map(r => r.amt));
+  const housingShare = catTotal(FULL_ALL, "Rent & Housing") / allTotal;
+  add("Rent is your biggest bill", `${(housingShare * 100).toFixed(0)}% of spending`, `Typical monthly rent went from about ${money(rFirst.avg)} in ${rFirst.y} to ${money(rLast.avg)} in ${rLast.y} (${pct(rLast.avg / rFirst.avg - 1)}). ${rLast.avg > rFirst.avg ? "Moving to Central Square in mid-2025 is what raised it." : ""} Rent alone is about ${(rLast.avg / (allTotal / fullMonths) * 100).toFixed(0)}% of a typical month's total spending.`);
 
   // 3 transportation
-  const trans = grpTotal(FULL, "Transportation"), carPay = catTotal(FULL, "Car Payments"), gas = catTotal(FULL, "Gas & Convenience"), tolls = catTotal(FULL, "Tolls & Parking");
-  add("Driving costs a lot", `${money(trans / fullMonths)}/month`, `Transportation is ${(trans / total * 100).toFixed(0)}% of spending: car payments ${money(carPay / fullMonths)}/mo, gas stations ${money(gas / fullMonths)}/mo, tolls & parking ${money(tolls / fullMonths)}/mo, plus repairs, rideshare and rentals. Adding insurance, it comes to ${money((trans + catTotal(FULL, "Insurance")) / fullMonths)}/mo.`);
+  const trans = grpTotal(FULL, "Transportation"), carPay = catTotal(FULL_ALL, "Car Note"), gas = catTotal(FULL, "Gas & Convenience"), tolls = catTotal(FULL, "Tolls & Parking");
+  add("Driving costs a lot", `${money(trans / fullMonths)}/month`, `Transportation is ${(trans / total * 100).toFixed(0)}% of spending${XL}: ${EXCL ? "" : `car note ${money(carPay / fullMonths)}/mo, `}gas stations ${money(gas / fullMonths)}/mo, tolls & parking ${money(tolls / fullMonths)}/mo, plus repairs, rideshare and rentals. Adding insurance, it comes to ${money((trans + catTotal(FULL, "Insurance")) / fullMonths)}/mo${EXCL ? `, and the ${money(carPay / fullMonths)}/mo car note comes on top of that` : ""}.`);
 
   // 4 food
   const eatOut = ["Restaurants", "Fast Food", "Coffee & Bakery", "Food Delivery"].reduce((s, c) => s + catTotal(FULL, c), 0), groc = catTotal(FULL, "Groceries");
@@ -1023,6 +1050,7 @@ function renderDeep() {
     `Fidelity checking records purchases as negative numbers, unlike your other accounts, so its signs were flipped.`,
     `Spending counts ${S.spend_rows.toLocaleString()} transactions. Not counted as spending: ${ex}. Paying a credit card isn't new spending, because the card purchases are already counted. Refunds are subtracted from the category they came from.`,
     `Categories come from my own rules that read the merchant name and description (about 450 patterns), so they don't depend on Rocket Money's labels. Rocket Money's label is used only when nothing matches (for example, rows named just "miscellaneous"). Uncategorized ("Other") is ${(S.uncategorised_share * 100).toFixed(1)}% of spending.`,
+    `"Rent + car note" means apartment rent (and rent-related charges such as the Hunter Warfield collection) plus auto-loan payments to Ally, Capital One Auto and GM Financial. The switch at the top hides them from every chart except Spending by year. Top category, top vendor, vendor loyalty and biggest months always leave them out.`,
     `Account coverage: only the USAA debit account (Daily Spending) was linked from May 2020. Credit cards (Navy Federal, Amex Hilton, USAA) were added around April–June 2022. Rent first appears in late 2022. Years before ${COMPLETE_FROM} are shown lighter and marked with an asterisk.`,
   ].forEach(t => ab.appendChild(el("p", { style: "margin:0 0 8px" }, t)));
 }
@@ -1031,27 +1059,30 @@ function renderIncome(recs) {
   const host = $("#d-inc"); host.replaceChildren();
   const ys = YEARS; const inc = ys.map(y => sum(INCOME.filter(r => r.y === y).map(r => r.amt))), sp = ys.map(y => yTotal(TX, y));
   const net = ys.map((y, i) => inc[i] - sp[i]);
+  const spV = ys.map(y => yTotal(V(), y));
   $("#d-inc-desc").textContent = "Deposits (paychecks, unemployment, mobile deposits) compared with spending. Savings rate = what was left ÷ income. Transfers to Fidelity and Robinhood count as saved.";
-  xyChart(host, { labels: ys.map(String), bars: [{ name: "Income", color: "var(--s3)", values: inc }, { name: "Spending", color: "var(--s1)", values: sp }], height: 270, dimmed: i => partialYear(ys[i]),
-    tipTitle: i => String(ys[i]), tipFoot: i => `Left over ${money(net[i])} · savings rate ${inc[i] ? (net[i] / inc[i] * 100).toFixed(0) : 0}%${ys[i] < COMPLETE_FROM ? " · spending under-counted" : ""}`, aria: "Income vs spending by year" });
+  xyChart(host, { labels: ys.map(String), bars: [{ name: "Income", color: "var(--s3)", values: inc }, { name: "Spending" + XLs(), color: "var(--s1)", values: spV }], height: 270, dimmed: i => partialYear(ys[i]),
+    tipTitle: i => String(ys[i]), tipFoot: i => `Including rent + car note, left over ${money(net[i])} (${inc[i] ? (net[i] / inc[i] * 100).toFixed(0) : 0}% of income)${ys[i] < COMPLETE_FROM ? " · spending under-counted" : ""}`, aria: "Income vs spending by year" });
   const full = ys.map((y, i) => ({ y, i })).filter(o => o.y >= COMPLETE_FROM);
   const rate = sum(full.map(o => net[o.i])) / sum(full.map(o => inc[o.i]));
   host.appendChild(el("div", { class: "note", style: "margin-top:4px" }, rate >= 0
-    ? `Since ${COMPLETE_FROM}: ${money(sum(full.map(o => inc[o.i])))} deposited, ${money(sum(full.map(o => sp[o.i])))} spent, so about ${(rate * 100).toFixed(0)}% was left over. This is an estimate: pay deposited into accounts that aren't linked wouldn't show up here.`
-    : `Since ${COMPLETE_FROM}: ${money(sum(full.map(o => inc[o.i])))} deposited but ${money(sum(full.map(o => sp[o.i])))} spent, a gap of ${money(-sum(full.map(o => net[o.i])))}. Either some pay goes into accounts that aren't linked, or the gap was carried on credit cards. Rising card interest in 2023–2024 suggests at least part of it was.`));
+    ? `Since ${COMPLETE_FROM}: ${money(sum(full.map(o => inc[o.i])))} deposited, ${money(sum(full.map(o => sp[o.i])))} spent including rent + car note, so about ${(rate * 100).toFixed(0)}% was left over. This is an estimate: pay deposited into accounts that aren't linked wouldn't show up here.`
+    : `Since ${COMPLETE_FROM}: ${money(sum(full.map(o => inc[o.i])))} deposited but ${money(sum(full.map(o => sp[o.i])))} spent including rent + car note, a gap of ${money(-sum(full.map(o => net[o.i])))}. Either some pay goes into accounts that aren't linked, or the gap was carried on credit cards. Rising card interest in 2023–2024 suggests at least part of it was.`));
   if (rate < 0.2) recs.unshift(rate < 0
     ? `<b>Close the gap first:</b> since ${COMPLETE_FROM}, spending has been ${money(-sum(full.map(o => net[o.i])) / fullMonths)}/month more than the deposits in this data. If that's real (and not pay going to an account that isn't linked), cutting that amount each month is the top priority. The steps below add up to most of it.`
     : `<b>Savings rate:</b> about ${(rate * 100).toFixed(0)}% of income has been left over since ${COMPLETE_FROM}. Getting to 20% means spending about ${money(sum(full.map(o => inc[o.i])) * (0.2 - rate) / fullMonths)}/month less.`);
 }
 
+function XLs() { return EXCL ? " (excl. rent + car note)" : ""; }
 function renderEss(recs) {
+  $("#ess-desc").textContent = EXCL ? "Essentials here are gas, tolls, groceries, utilities, phone, insurance, medical and education. Rent and car note are switched off above." : "Essentials are rent, car note, gas, tolls, groceries, utilities, phone, insurance, medical and education.";
   const host = $("#d-ess"); host.replaceChildren();
   const ms = ALL_MONTHS.filter(m => +m.slice(0, 4) >= COMPLETE_FROM);
   const e = ms.map(m => sum(FULL.filter(r => r.ym === m && !isDiscretionary(r)).map(r => r.amt))), d = ms.map(m => sum(FULL.filter(r => r.ym === m && isDiscretionary(r)).map(r => r.amt)));
   xyChart(host, { labels: ms, bars: [{ name: "Essentials", color: "var(--s1)", values: e }, { name: "Discretionary", color: "var(--s2)", values: d }], stacked: true, height: 270,
     xLabel: i => ms[i].endsWith("-01") ? ms[i].slice(0, 4) : "", xEvery: 1, tipTitle: i => ymLabel(ms[i]),
     tipFoot: i => `Discretionary share ${((d[i] / (d[i] + e[i])) * 100).toFixed(0)}%`, aria: "Essentials vs discretionary by month" });
-  const shares = YEARS.filter(y => y >= COMPLETE_FROM).map(y => { const rows = TX.filter(r => r.y === y); const dd = sum(rows.filter(isDiscretionary).map(r => r.amt)); return `${y}: ${(dd / yTotal(TX, y) * 100).toFixed(0)}%`; });
+  const shares = YEARS.filter(y => y >= COMPLETE_FROM).map(y => { const rows = V().filter(r => r.y === y); const dd = sum(rows.filter(isDiscretionary).map(r => r.amt)); return `${y}: ${(dd / yTotal(V(), y) * 100).toFixed(0)}%`; });
   host.appendChild(el("div", { class: "note", style: "margin-top:4px" }, "Discretionary share of spending by year: " + shares.join(" · ")));
 }
 
@@ -1059,7 +1090,7 @@ function renderGrowth() {
   const host = $("#d-growth"); host.replaceChildren();
   const a1 = LAST_T - 365 * dayMs, a0 = LAST_T - 730 * dayMs;
   $("#d-growth-desc").textContent = `Change by category, last 12 months compared with the 12 months before (to ${LAST}). Red means spending grew, blue means it shrank.`;
-  const cur = by(TX.filter(r => r.t > a1), r => r.cat), prv = by(TX.filter(r => r.t > a0 && r.t <= a1), r => r.cat);
+  const cur = by(V().filter(r => r.t > a1), r => r.cat), prv = by(V().filter(r => r.t > a0 && r.t <= a1), r => r.cat);
   const cats = [...new Set([...cur.keys(), ...prv.keys()])].map(c => ({ c, d: (cur.get(c) || 0) - (prv.get(c) || 0), a: cur.get(c) || 0, b: prv.get(c) || 0 })).filter(o => Math.abs(o.d) >= 150).sort((x, y) => y.d - x.d);
   const max = Math.max(...cats.map(o => Math.abs(o.d)));
   const g = el("div", { style: "display:grid;grid-template-columns:minmax(110px,190px) 1fr 1fr auto;gap:5px 8px;align-items:center;font-size:13px" });
@@ -1180,7 +1211,8 @@ function renderFees() {
 function renderSeason() {
   const host = $("#d-season"); host.replaceChildren();
   const ys = [2023, 2024, 2025].filter(y => YEARS.includes(y));
-  const vals = MONTHS.map((_, m) => sum(ys.map(y => sum(TX.filter(r => r.y === y && r.m === m && !FIXED.has(r.cat)).map(r => r.amt))) ) / ys.length);
+  $("#d-season-desc").textContent = `Average spending by calendar month, 2023–2025 (full-coverage years)${EXCL ? ", excluding rent and car note" : ", including rent and car note"}.`;
+  const vals = MONTHS.map((_, m) => sum(ys.map(y => sum(V().filter(r => r.y === y && r.m === m).map(r => r.amt))) ) / ys.length);
   const avg = sum(vals) / 12;
   xyChart(host, { labels: MONTHS, bars: [{ name: "Average month", color: "var(--s1)", values: vals }], lines: [{ name: "Yearly average", color: "var(--ink-2)", values: MONTHS.map(() => avg) }], height: 250,
     tipTitle: i => MONTHS[i], tipFoot: i => `${pct(vals[i] / avg - 1)} vs a typical month`, aria: "Average spending by calendar month" });
@@ -1188,7 +1220,8 @@ function renderSeason() {
 
 function renderSize() {
   const host = $("#d-size"); host.replaceChildren();
-  const ys = YEARS; const p = ys.map(y => TX.filter(r => r.y === y && r.amt > 0 && !FIXED.has(r.cat)).map(r => r.amt));
+  $("#d-size-desc").textContent = `Median and 90th-percentile purchase amount per year${EXCL ? ", excluding rent and car note" : ""}.`;
+  const ys = YEARS; const p = ys.map(y => V().filter(r => r.y === y && r.amt > 0).map(r => r.amt));
   xyChart(host, { labels: ys.map(String), lines: [{ name: "Median purchase", color: "var(--s1)", values: p.map(a => quantile(a, 0.5)) }, { name: "90th percentile", color: "var(--s2)", values: p.map(a => quantile(a, 0.9)) }],
     height: 250, yFmt: v => money(v, 2), endLabels: (s, v) => money(v, 0), mr: 16, aria: "Median and 90th percentile purchase size by year" });
 }
@@ -1196,7 +1229,7 @@ function renderSize() {
 function renderLoyal() {
   const host = $("#d-loyal"); host.replaceChildren();
   const seen = new Set(); const rows = YEARS.map(y => {
-    const rs = TX.filter(r => r.y === y && r.amt > 0); const m = by(rs, r => r.vendor); const tot = sum(rs.map(r => r.amt));
+    const rs = TXNF.filter(r => r.y === y && r.amt > 0); const m = by(rs, r => r.vendor); const tot = sum(rs.map(r => r.amt));
     const top = [...m].sort((a, b) => b[1] - a[1]); const top10 = sum(top.slice(0, 10).map(x => x[1]));
     const fresh = [...m.keys()].filter(v => !seen.has(v)); m.forEach((_, v) => seen.add(v));
     return [y + (y < COMPLETE_FROM ? "*" : ""), m.size, fresh.length, (top10 / tot * 100).toFixed(0) + "%", top.slice(0, 3).map(x => x[0]).join(", ")];
@@ -1206,9 +1239,9 @@ function renderLoyal() {
 
 function renderPeaks() {
   const host = $("#d-peaks"); host.replaceChildren();
-  const m = ALL_MONTHS.map(ym => ({ ym, v: sum(TX.filter(r => r.ym === ym).map(r => r.amt)) })).sort((a, b) => b.v - a.v).slice(0, 10);
+  const m = ALL_MONTHS.map(ym => ({ ym, v: sum(TXNF.filter(r => r.ym === ym).map(r => r.amt)) })).sort((a, b) => b.v - a.v).slice(0, 10);
   table(host, ["Month", "Total", "Top group", "Largest charges"], m.map(o => {
-    const rs = TX.filter(r => r.ym === o.ym); const g = [...by(rs, r => r.grp)].sort((a, b) => b[1] - a[1])[0];
+    const rs = TXNF.filter(r => r.ym === o.ym); const g = [...by(rs, r => r.grp)].sort((a, b) => b[1] - a[1])[0];
     const big = rs.slice().sort((a, b) => b.amt - a.amt).slice(0, 3).map(r => `${r.vendor} ${money(r.amt)}`).join(" · ");
     return [ymLabel(o.ym), money(o.v), `${g[0]} (${compact(g[1])})`, big];
   }), { num: [0, 1, 0, 0], wrapCol: 3 });
@@ -1218,6 +1251,20 @@ function renderPeaks() {
 $("#subtitle").textContent = `${FIRST} to ${LAST} · ${TX.length.toLocaleString()} spending transactions across ${DATA.accounts.length} accounts`;
 seg("year", renderYear); seg("yoy", renderYoy); seg("month", renderMonth); seg("mom", renderMom); seg("vel", renderVel);
 seg("cat", renderCat); seg("mix", renderMix); seg("ven", renderVendors); seg("food", renderFood); seg("sub", () => renderSubs(detectSubscriptions()));
+const fixedSeg = $("#fixed-seg");
+function syncFixed() {
+  fixedSeg.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.v === "out") === EXCL)));
+  const rent = sum(TX.filter(r => r.cat === "Rent & Housing").map(r => r.amt)), car = sum(TX.filter(r => r.cat === "Car Note").map(r => r.amt));
+  $("#fixed-note").textContent = EXCL
+    ? `Hidden from every chart except Spending by year: rent ${money(rent)} + car note ${money(car)} all-time.`
+    : `Included everywhere. Top category, top vendor, vendor loyalty and biggest months still leave them out.`;
+}
+fixedSeg.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  EXCL = b.dataset.v === "out"; try { localStorage.setItem("spend-fixed", EXCL ? "out" : "in"); } catch (err) {}
+  syncFixed(); hideTip(); $("#panel-deep").hidden ? renderDashboard() : renderDeep();
+});
+syncFixed();
 fPeriod.addEventListener("change", renderDashboard); fGroup.addEventListener("change", renderDashboard);
 $("#ven-q").addEventListener("input", renderVTable); $("#tx-q").addEventListener("input", () => renderTx());
 const tabs = [["tab-dash", "panel-dash"], ["tab-deep", "panel-deep"]];

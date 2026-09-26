@@ -22,7 +22,7 @@ ROOT = Path(__file__).parent
 # --------------------------------------------------------------------------
 GROUPS = {
     "Housing": ["Rent & Housing"],
-    "Transportation": ["Car Payments", "Gas & Convenience", "Auto Service & Parts",
+    "Transportation": ["Car Note", "Gas & Convenience", "Auto Service & Parts",
                        "Car Wash", "Tolls & Parking", "Rideshare & Rentals",
                        "Vehicle Purchase & Fees"],
     "Food & Dining": ["Restaurants", "Fast Food", "Coffee & Bakery",
@@ -41,7 +41,7 @@ GROUPS = {
 }
 CAT2GROUP = {c: g for g, cs in GROUPS.items() for c in cs}
 
-ESSENTIAL = {"Rent & Housing", "Car Payments", "Gas & Convenience", "Auto Service & Parts",
+ESSENTIAL = {"Rent & Housing", "Car Note", "Gas & Convenience", "Auto Service & Parts",
              "Tolls & Parking", "Groceries", "Utilities & Internet", "Phone", "Insurance",
              "Medical", "Vehicle Purchase & Fees", "Education"}
 
@@ -83,13 +83,13 @@ R = [
     (r"BELL-B\d|BELL PARTNERS", "Bell Apartments", "Rent & Housing"),
     (r"LEBANON RIDGE", "Lebanon Ridge Apartments", "Rent & Housing"),
     (r"HUNTER WARFIELD", "Hunter Warfield (apartment collections)", "Rent & Housing"),
-    (r"PEAK AUTO STORAGE|PUBLIC STORAGE|EXTRA SPACE|CUBESMART", None, "Rent & Housing"),
+    (r"PEAK AUTO STORAGE|PUBLIC STORAGE|EXTRA SPACE|CUBESMART", None, "Tolls & Parking"),
 
     # ---- transportation ----------------------------------------------------
-    (r"ALLY (ALLY )?PAYMT|ALLY RETRY", "Ally Auto", "Car Payments"),
-    (r"CAPITAL ONE AUTO", "Capital One Auto", "Car Payments"),
-    (r"GM FINANCIAL", "GM Financial", "Car Payments"),
-    (r"MEPCO|ENDURANCE", "Endurance Warranty", "Car Payments"),
+    (r"ALLY (ALLY )?PAYMT|ALLY RETRY", "Ally Auto", "Car Note"),
+    (r"CAPITAL ONE AUTO", "Capital One Auto", "Car Note"),
+    (r"GM FINANCIAL", "GM Financial", "Car Note"),
+    (r"MEPCO|ENDURANCE", "Endurance Warranty", "Auto Service & Parts"),
     (r"GARLYN SHELTON|CARMAX|AUTOTRADER|MCKINNEY BUICK|CARVANA|VEHICLE REG|TXDMV|TX DMV", None, "Vehicle Purchase & Fees"),
     (r"BMW|INTEGRITY-1ST|AUTOZONE|O'?REILLY|ADVANCE AUTO|ROCK ?AUTO|BUDGET WRENCH|SERVICE STREET|AAA TIRE"
      r"|FIRESTONE|DISCOUNT TIRE|JIFFY LUBE|VALVOLINE|TAKE 5|PEP BOYS|MIDAS|MEINEKE|WILLIE`?S PERFORMANCE"

@@ -16,6 +16,9 @@ Open `output/spending_dashboard.html` in a browser. It is one self-contained fil
 3. **Excludes non-spending**: credit-card payments, transfers between your own accounts, investing, income, and rewards.
 4. **Embeds the data** into `template.html`.
 
+## Rent + car note switch
+A switch at the top hides rent and car-loan payments from every chart except **Spending by year**. That chart always shows them as their own stacked segment, next to everything else. Top category, top vendor, vendor loyalty and biggest months always leave them out. Your choice is remembered in the browser.
+
 ## Dashboard tab
 Spending by year (plus a same-period comparison for the current year), year over year by month, month by month, month-over-month change, spending velocity (monthly, quarterly and yearly pace), categories, category mix, a category-by-year heatmap, top vendors, a vendor directory and a searchable transaction list. Filter by period and by category group.
 
