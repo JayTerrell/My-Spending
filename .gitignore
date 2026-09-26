@@ -1,0 +1,8 @@
+# Personal financial data and the generated dashboard (it embeds every transaction)
+data/
+output/
+*.xlsx
+*.csv
+index.html
+__pycache__/
+*.png
