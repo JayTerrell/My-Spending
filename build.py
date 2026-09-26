@@ -25,7 +25,7 @@ GROUPS = {
     "Transportation": ["Car Note", "Gas & Convenience", "Auto Service & Parts",
                        "Car Wash", "Tolls & Parking", "Rideshare & Rentals",
                        "Vehicle Purchase & Fees"],
-    "Food & Dining": ["Restaurants", "Fast Food", "Coffee & Bakery",
+    "Food & Dining": ["Work Cafeteria", "Work Vending", "Restaurants", "Fast Food", "Coffee & Bakery",
                       "Food Delivery", "Groceries"],
     "Shopping": ["General Merchandise", "Online Shopping", "Clothing & Accessories",
                  "Electronics & Gaming", "Home & Furniture", "Books & Hobbies"],
@@ -44,6 +44,8 @@ CAT2GROUP = {c: g for g, cs in GROUPS.items() for c in cs}
 ESSENTIAL = {"Rent & Housing", "Car Note", "Gas & Convenience", "Auto Service & Parts",
              "Tolls & Parking", "Groceries", "Utilities & Internet", "Phone", "Insurance",
              "Medical", "Vehicle Purchase & Fees", "Education"}
+
+VENDING = "__vending__"  # resolved to CBRE / JPMC vending by date in classify()
 
 # Non-spending buckets (never counted as spend)
 X_CC = "Credit Card Payment"
@@ -67,7 +69,19 @@ R = [
     (r"CRYPTO\.COM ARENA", "Crypto.com Arena", "Entertainment & Events"),
     (r"CHURCH'?S CHICKEN|CHURCHS CHICKEN|CHURCH S CHICKEN", "Church's Chicken", "Fast Food"),
     (r"CYMATICS", "Cymatics", "Music Production"),
-    (r"APRIVA|365 MARKET|MARKET J\b", "365 Market (vending)", "Coffee & Bakery"),
+    # merchants the generic food rules below would otherwise catch
+    (r"FCTI", "ATM withdrawal (FCTI)", "Cash Withdrawals"),
+    (r"WILLIAMS &AMP; FUDGE|WILLIAMS & FUDGE", "Williams & Fudge (collections)", "Credit & Debt Services"),
+    (r"WHITEN", None, "Personal Care"),
+    (r"CTI FZCO|CTI GLOBAL", "City Traders Imperium", "Business & Side Hustle"),
+    (r"WRECKER|TOWING", None, "Auto Service & Parts"),
+    (r"BRUNO MARS STORE", None, "Clothing & Accessories"),
+    (r"PILOT TRAVEL", None, "Gas & Convenience"),
+    (r"HI-FI STUDIO", None, "Music Production"),
+    # work food: CBRE (Wildflower cafe + vending) until the move to JPMC in April 2026
+    (r"WILDFLOWER ?CAFE", "CBRE cafe (Wildflower)", "Work Cafeteria"),
+    (r"JPMC", "JPMC cafe", "Work Cafeteria"),
+    (r"APRIVA|\b365 MARKET", VENDING, "Work Vending"),
     (r"FID BKG SVC|MONEYLINE|ROBINHOOD|MOONPAY|CRO ST JULIANS|CRYPTO\.COM|COINBASE|FIDELITY INVESTMENTS"
      r"|CASH APP\*KING DIAMO|WEBULL|ACORNS|STASH", None, X_INVEST),
     (r"DIRECT DEP|PAYROLL|TWC-BENEFITS|TWC BENEFITS|DEPOSIT@MOBILE|ATM DEPOSIT|ETSY INC DEPOSIT|ETSY PAYOUT"
@@ -204,6 +218,7 @@ R = [
      r"|PARTY CITY|SPENCER|TOY|LEGO|PET|CHEWY|PETSMART|PETCO|GIFT|ENCANTO|PAWN|DALLAS MTV", None, "Books & Hobbies"),
 ]
 RULES = [(re.compile(p), v, c) for p, v, c in R]
+JOB_SWITCH = pd.Timestamp("2026-04-01")  # CBRE -> JPMC
 
 # Fallback: source category -> ours (for rows no rule matched)
 SRC_FALLBACK = {
@@ -350,6 +365,8 @@ def classify(row):
                 break
     if vendor is None:
         vendor = clean_vendor(name, desc)
+    if vendor == VENDING:
+        vendor = "CBRE vending" if row["Date"] < JOB_SWITCH else "JPMC vending"
     if cat == "Streaming & Media" and vendor == "Amazon":
         vendor = "Amazon Prime & Digital"
     return cat, vendor

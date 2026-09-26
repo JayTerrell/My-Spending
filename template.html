@@ -147,6 +147,14 @@ ul.recs { margin: 0; padding-left: 20px; } ul.recs li { margin: 6px 0; color: va
 .pager button:disabled { opacity: 0.4; cursor: default; }
 .flag { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 6px; background: var(--surface-2); color: var(--ink-2); margin-left: 6px; }
 [hidden] { display: none !important; }
+.plan { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 800px) { .plan { grid-template-columns: 1fr; } }
+.sl { margin-bottom: 14px; }
+.sl .top { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+.sl .top b { font-variant-numeric: tabular-nums; }
+.sl .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.sl input[type="range"] { width: 100%; accent-color: var(--accent); margin: 6px 0 0; }
+.big-save { font-size: 40px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.1; color: var(--good); }
 @media (max-width: 600px) {
   .hero { font-size: 40px; }
   .hb { grid-template-columns: minmax(80px, 130px) 1fr auto; }
@@ -164,6 +172,7 @@ ul.recs { margin: 0; padding-left: 20px; } ul.recs li { margin: 6px 0; color: va
     <div class="tabs" role="tablist">
       <button role="tab" id="tab-dash" aria-selected="true" aria-controls="panel-dash">Dashboard</button>
       <button role="tab" id="tab-deep" aria-selected="false" aria-controls="panel-deep">Deep dive: patterns &amp; trends</button>
+      <button role="tab" id="tab-food" aria-selected="false" aria-controls="panel-food">Food</button>
     </div>
   </header>
 
@@ -337,6 +346,56 @@ ul.recs { margin: 0; padding-left: 20px; } ul.recs li { margin: 6px 0; color: va
       <div class="card">
         <div class="card-h"><div><h2>About this data</h2></div></div>
         <div id="d-about" class="note" style="font-size:13px;color:var(--ink-2)"></div>
+      </div>
+    </div>
+  </section>
+  <!-- ======================= FOOD ======================= -->
+  <section id="panel-food" role="tabpanel" aria-labelledby="tab-food" hidden>
+    <div class="filters">
+      <label>Based on
+        <select id="food-base">
+          <option value="jpmc">Since starting at JPMC (Apr 2026)</option>
+          <option value="3">Last 3 months</option>
+          <option value="6">Last 6 months</option>
+          <option value="12">Last 12 months</option>
+          <option value="2023">2023 onward</option>
+        </select>
+      </label>
+      <span class="note" id="food-base-note"></span>
+    </div>
+    <div class="grid">
+      <div class="card span-4">
+        <div class="card-h"><div><h2>Your food spending</h2><div class="desc" id="food-hero-desc"></div></div></div>
+        <div id="food-hero"></div>
+      </div>
+      <div class="card span-8">
+        <div class="card-h"><div><h2>Where the food money goes</h2><div class="desc">Monthly average by type for the selected period. Each purchase counts as one visit.</div></div></div>
+        <div id="food-break"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div><h2>Food spending by month</h2><div class="desc">Every food purchase since 2023, stacked by type, with a 3-month average. Lunch at work switched from the CBRE Wildflower cafe to the JPMC cafe in April 2026.</div></div>
+          <div class="seg" data-view="fmonth"><button aria-pressed="true" data-v="chart">Chart</button><button aria-pressed="false" data-v="table">Table</button></div></div>
+        <div id="food-month"></div>
+      </div>
+
+      <div class="card span-6">
+        <div class="card-h"><div><h2>Food at work: CBRE vs. JPMC</h2><div class="desc">Cafeteria lunches and vending machines, per month.</div></div></div>
+        <div id="food-work"></div>
+      </div>
+      <div class="card span-6">
+        <div class="card-h"><div><h2>Top food spots</h2><div class="desc" id="food-top-desc"></div></div></div>
+        <div id="food-top"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div><h2>Meal-prep savings planner</h2><div class="desc">Estimate what cooking dinner at home and meal-prepping lunch would save. It starts from your real habits in the selected period: how many times a month you buy each type of meal, and what you pay on average. Drag the sliders to match your plan.</div></div></div>
+        <div id="food-plan"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div><h2>What the data says about your eating</h2></div></div>
+        <div class="ins" id="food-ins"></div>
       </div>
     </div>
   </section>
@@ -950,6 +1009,9 @@ function renderTx(resetPage = true) {
 // ------------------------------------------------------------------ DEEP DIVE
 let FULL = TXNF.filter(r => r.y >= COMPLETE_FROM);          // view rows since COMPLETE_FROM (reset in renderDeep)
 const FULL_ALL = TX.filter(r => r.y >= COMPLETE_FROM);
+const FOOD = ["Work Cafeteria", "Work Vending", "Restaurants", "Fast Food", "Coffee & Bakery", "Groceries", "Food Delivery"];
+const FOOD_OUT = FOOD.filter(c => c !== "Groceries");
+const FOOD_COLOR = {}; FOOD.forEach((c, i) => FOOD_COLOR[c] = `var(--s${i + 1})`);
 const fullYears = YEARS.filter(y => y >= COMPLETE_FROM);
 const fullDays = Math.round((LAST_T - Date.UTC(COMPLETE_FROM, 0, 1)) / dayMs) + 1;
 const fullMonths = fullDays / 30.4375;
@@ -984,9 +1046,9 @@ function renderDeep() {
   add("Driving costs a lot", `${money(trans / fullMonths)}/month`, `Transportation is ${(trans / total * 100).toFixed(0)}% of spending${XL}: ${EXCL ? "" : `car note ${money(carPay / fullMonths)}/mo, `}gas stations ${money(gas / fullMonths)}/mo, tolls & parking ${money(tolls / fullMonths)}/mo, plus repairs, rideshare and rentals. Adding insurance, it comes to ${money((trans + catTotal(FULL, "Insurance")) / fullMonths)}/mo${EXCL ? `, and the ${money(carPay / fullMonths)}/mo car note comes on top of that` : ""}.`);
 
   // 4 food
-  const eatOut = ["Restaurants", "Fast Food", "Coffee & Bakery", "Food Delivery"].reduce((s, c) => s + catTotal(FULL, c), 0), groc = catTotal(FULL, "Groceries");
-  const foodVisits = FULL.filter(r => ["Restaurants", "Fast Food", "Coffee & Bakery", "Food Delivery"].includes(r.cat) && r.amt > 0).length;
-  add("You eat out far more than you cook", `$${(eatOut / Math.max(1, groc)).toFixed(1)} out : $1 groceries`, `Eating out: ${money(eatOut / fullMonths)}/month across about ${(foodVisits / fullMonths).toFixed(0)} visits (fast food, restaurants, coffee, Uber Eats). Groceries: only ${money(groc / fullMonths)}/month. Walmart and Target trips probably include some groceries too.`);
+  const eatOut = FOOD_OUT.reduce((s, c) => s + catTotal(FULL, c), 0), groc = catTotal(FULL, "Groceries");
+  const foodVisits = FULL.filter(r => FOOD_OUT.includes(r.cat) && r.amt > 0).length;
+  add("You eat out far more than you cook", `$${(eatOut / Math.max(1, groc)).toFixed(1)} out : $1 groceries`, `Eating out: ${money(eatOut / fullMonths)}/month across about ${(foodVisits / fullMonths).toFixed(0)} purchases (work cafeteria and vending, fast food, restaurants, coffee, Uber Eats). The Food tab has the full breakdown. Groceries: only ${money(groc / fullMonths)}/month. Walmart and Target trips probably include some groceries too.`);
   recs.push(`<b>Food:</b> moving 4 restaurant or fast-food meals a week to groceries would save roughly ${money(Math.min(eatOut / fullMonths * 0.3, 4 * 4.33 * 11))}/month. Uber Eats alone was ${money(catTotal(FULL, "Food Delivery"))} since ${COMPLETE_FROM}, and delivery fees make it the most expensive way to eat.`);
 
   // 5 convenience stores
@@ -1149,16 +1211,16 @@ function renderPay(pay) {
   host.appendChild(el("div", { class: "note", style: "margin-top:4px" }, `Overall: ${money(pay.w1)} in week 1 vs ${money(pay.w2)} in week 2 (${pct(pay.lift)}).`));
 }
 
-const FOOD = ["Restaurants", "Fast Food", "Coffee & Bakery", "Food Delivery", "Groceries"];
 function renderFood() {
   const host = $("#d-food"); host.replaceChildren();
   const ys = YEARS; const vals = FOOD.map(c => ys.map(y => catTotal(TX.filter(r => r.y === y), c)));
+  const gi = FOOD.indexOf("Groceries");
   if (VIEW.food === "table") {
-    table(host, ["Year", ...FOOD, "Out : groceries", "Visits / mo"], ys.map((y, i) => { const out = sum(FOOD.slice(0, 4).map((_, k) => vals[k][i])); const vis = TX.filter(r => r.y === y && FOOD.slice(0, 4).includes(r.cat) && r.amt > 0).length / (yearDays(y) / 30.4375);
-      return [y + (y < COMPLETE_FROM ? "*" : ""), ...FOOD.map((_, k) => money(vals[k][i])), vals[4][i] ? (out / vals[4][i]).toFixed(1) + " : 1" : "–", vis.toFixed(0)]; }), { num: [0, 1, 1, 1, 1, 1, 1, 1] });
+    table(host, ["Year", ...FOOD, "Out : groceries", "Purchases / mo"], ys.map((y, i) => { const out = sum(FOOD_OUT.map(c => vals[FOOD.indexOf(c)][i])); const vis = TX.filter(r => r.y === y && FOOD_OUT.includes(r.cat) && r.amt > 0).length / (yearDays(y) / 30.4375);
+      return [y + (y < COMPLETE_FROM ? "*" : ""), ...FOOD.map((_, k) => money(vals[k][i])), vals[gi][i] ? (out / vals[gi][i]).toFixed(1) + " : 1" : "–", vis.toFixed(0)]; }), { num: [0, ...FOOD.map(() => 1), 1, 1] });
     return;
   }
-  xyChart(host, { labels: ys.map(String), bars: FOOD.map((c, k) => ({ name: c, color: `var(--s${[3, 2, 4, 5, 1][k]})`, values: vals[k] })), stacked: true, height: 280, dimmed: i => partialYear(ys[i]), aria: "Food spending by type per year" });
+  xyChart(host, { labels: ys.map(String), bars: FOOD.map((c, k) => ({ name: c, color: FOOD_COLOR[c], values: vals[k] })), stacked: true, height: 280, dimmed: i => partialYear(ys[i]), aria: "Food spending by type per year" });
 }
 
 function renderSmall() {
@@ -1247,6 +1309,152 @@ function renderPeaks() {
   }), { num: [0, 1, 0, 0], wrapCol: 3 });
 }
 
+// ------------------------------------------------------------------ FOOD TAB
+const JPMC_START = "2026-04-01";
+function foodWindow() {
+  const v = $("#food-base").value;
+  if (v === "jpmc") return [JPMC_START, LAST];
+  if (v === "2023") return ["2023-01-01", LAST];
+  const d = new Date(LAST_T); d.setUTCMonth(d.getUTCMonth() - +v); d.setUTCDate(d.getUTCDate() + 1);
+  return [d.toISOString().slice(0, 10), LAST];
+}
+function foodStats(a, b) {
+  const rows = TX.filter(r => r.d >= a && r.d <= b && FOOD.includes(r.cat));
+  const months = (Math.round((parseD(b).getTime() - parseD(a).getTime()) / dayMs) + 1) / 30.4375;
+  const cat = {}; FOOD.forEach(c => { const rs = rows.filter(r => r.cat === c); const buys = rs.filter(r => r.amt > 0);
+    cat[c] = { total: sum(rs.map(r => r.amt)), n: buys.length, perMo: sum(rs.map(r => r.amt)) / months, visitsMo: buys.length / months, ticket: buys.length ? sum(buys.map(r => r.amt)) / buys.length : 0 }; });
+  const total = sum(rows.map(r => r.amt));
+  return { rows, months, cat, total, perMo: total / months };
+}
+let foodDone = false;
+function renderFoodTab() {
+  const [a, b] = foodWindow(), st = foodStats(a, b);
+  $("#food-base-note").textContent = `${a} to ${b} · ${st.months.toFixed(1)} months · ${st.rows.length} food purchases`;
+  // hero
+  const h = $("#food-hero"); h.replaceChildren();
+  const nonFood = sum(TXNF.filter(r => r.d >= a && r.d <= b).map(r => r.amt));
+  const out = sum(FOOD_OUT.map(c => st.cat[c].perMo)), groc = st.cat["Groceries"].perMo;
+  $("#food-hero-desc").textContent = "Average per month for the selected period, counting everything food: work cafeteria, vending, restaurants, fast food, coffee, delivery and groceries.";
+  h.append(el("div", { class: "hero" }, money(st.perMo)), el("div", { class: "note", style: "margin:6px 0 12px;font-size:13px" }, `per month · ${money(st.perMo / 30.4375, 2)} a day · ${(st.total / nonFood * 100).toFixed(0)}% of your spending outside rent and car note`));
+  const mini = el("div", { class: "kpis", style: "grid-template-columns:repeat(2,minmax(0,1fr));margin:0" });
+  const k = (l, v, d) => { const c = el("div", { class: "kpi" }); c.append(el("div", { class: "l" }, l), el("div", { class: "v", style: "font-size:20px" }, v)); if (d) c.appendChild(el("div", { class: "d" }, d)); mini.appendChild(c); };
+  k("Bought food / month", money(out), `${sum(FOOD_OUT.map(c => st.cat[c].visitsMo)).toFixed(0)} purchases`);
+  k("Groceries / month", money(groc), `${st.cat["Groceries"].visitsMo.toFixed(1)} trips`);
+  k("Work (cafe + vending)", money(st.cat["Work Cafeteria"].perMo + st.cat["Work Vending"].perMo), `${(st.cat["Work Cafeteria"].visitsMo + st.cat["Work Vending"].visitsMo).toFixed(0)} purchases / mo`);
+  k("Uber Eats", money(st.cat["Food Delivery"].perMo), `${st.cat["Food Delivery"].visitsMo.toFixed(1)} orders / mo`);
+  h.appendChild(mini);
+  // breakdown
+  const bk = $("#food-break"); bk.replaceChildren();
+  const order = FOOD.slice().sort((x, y) => st.cat[y].perMo - st.cat[x].perMo);
+  bk.appendChild(legend(order.map(c => ({ name: c, color: FOOD_COLOR[c] }))));
+  hbars(bk, order.map(c => ({ name: c, value: Math.max(0, st.cat[c].perMo), color: FOOD_COLOR[c],
+    tip: [{ name: "Per month", value: money(st.cat[c].perMo) }, { name: "Visits / month", value: st.cat[c].visitsMo.toFixed(1) }, { name: "Average purchase", value: money(st.cat[c].ticket, 2) }, { name: "Share of food", value: (st.cat[c].total / st.total * 100).toFixed(0) + "%" }] })),
+    it => `${money(it.value)}/mo · ${st.cat[it.name].visitsMo.toFixed(1)}× · avg ${money(st.cat[it.name].ticket, 2)}`);
+  table(bk, ["Type", "Per month", "Visits / mo", "Avg purchase", "Share"], order.map(c => [dotNode(FOOD_COLOR[c], c), money(st.cat[c].perMo), st.cat[c].visitsMo.toFixed(1), money(st.cat[c].ticket, 2), (st.cat[c].total / st.total * 100).toFixed(0) + "%"]).concat([["Total", money(st.perMo), (st.rows.filter(r => r.amt > 0).length / st.months).toFixed(0), money(sum(st.rows.filter(r => r.amt > 0).map(r => r.amt)) / Math.max(1, st.rows.filter(r => r.amt > 0).length), 2), "100%"]]), { num: [0, 1, 1, 1, 1] }).style.marginTop = "12px";
+  renderFoodMonth(); renderFoodWork(); renderFoodTop(a, b); renderFoodPlan(st); renderFoodIns(st);
+}
+function renderFoodMonth() {
+  const host = $("#food-month"); host.replaceChildren();
+  const ms = ALL_MONTHS.filter(m => m >= "2023-01");
+  const vals = FOOD.map(c => ms.map(m => sum(TX.filter(r => r.ym === m && r.cat === c).map(r => r.amt))));
+  const tot = ms.map((_, i) => sum(vals.map(v => v[i])));
+  if (VIEW.fmonth === "table") { table(host, ["Month", "Total", ...FOOD], ms.map((m, i) => [ymLabel(m), money(tot[i]), ...vals.map(v => money(v[i]))]).reverse(), { num: [0, 1, ...FOOD.map(() => 1)] }); return; }
+  const ma = tot.map((_, i) => i >= 2 ? (tot[i] + tot[i - 1] + tot[i - 2]) / 3 : null);
+  xyChart(host, { labels: ms, bars: FOOD.map((c, k) => ({ name: c, color: FOOD_COLOR[c], values: vals[k] })), stacked: true, lines: [{ name: "3-month average", color: "var(--ink-2)", values: ma }], height: 320,
+    xLabel: i => ms[i].endsWith("-01") ? ms[i].slice(0, 4) : (ms[i].endsWith("-07") ? "Jul" : ""), xEvery: 1,
+    tipTitle: i => ymLabel(ms[i]) + (daysCovered(ms[i]) < daysIn(+ms[i].slice(0, 4), +ms[i].slice(5, 7) - 1) ? ` (${daysCovered(ms[i])} days)` : ""), aria: "Monthly food spending by type" });
+}
+function renderFoodWork() {
+  const host = $("#food-work"); host.replaceChildren();
+  const W = TX.filter(r => r.cat === "Work Cafeteria" || r.cat === "Work Vending");
+  const first = W.reduce((m, r) => r.ym < m ? r.ym : m, "9999"); const ms = ALL_MONTHS.filter(m => m >= first);
+  const V4 = [["CBRE cafe (Wildflower)", "var(--s1)"], ["CBRE vending", "var(--s2)"], ["JPMC cafe", "var(--s3)"], ["JPMC vending", "var(--s4)"]];
+  xyChart(host, { labels: ms, bars: V4.map(([v, c]) => ({ name: v, color: c, values: ms.map(m => sum(W.filter(r => r.ym === m && r.vendor === v).map(r => r.amt))) })), stacked: true, height: 260,
+    xLabel: i => ms[i].endsWith("-01") ? ms[i].slice(0, 4) : "", xEvery: 1, tipTitle: i => ymLabel(ms[i]), aria: "Work food spending by month and employer" });
+  const eras = [["CBRE", "CBRE cafe (Wildflower)", "CBRE vending"], ["JPMC", "JPMC cafe", "JPMC vending"]].map(([name, cafe, vend]) => {
+    const rs = W.filter(r => r.vendor === cafe || r.vendor === vend); const ms2 = new Set(rs.map(r => r.ym));
+    const c = rs.filter(r => r.vendor === cafe && r.amt > 0), v = rs.filter(r => r.vendor === vend && r.amt > 0);
+    const activeMs = Math.max(1, ms2.size);
+    return [name, `${rs[0]?.d.slice(0, 7) || "–"} → ${rs[rs.length - 1]?.d.slice(0, 7) || "–"}`, money(sum(c.map(r => r.amt)) / activeMs), (c.length / activeMs).toFixed(1), money(sum(c.map(r => r.amt)) / Math.max(1, c.length), 2), money(sum(v.map(r => r.amt)) / activeMs), money(sum(v.map(r => r.amt)) / Math.max(1, v.length), 2)];
+  });
+  table(host, ["Job", "Months", "Cafe / mo", "Cafe visits / mo", "Avg lunch", "Vending / mo", "Avg snack"], eras, { num: [0, 0, 1, 1, 1, 1, 1] }).style.marginTop = "10px";
+  host.appendChild(el("div", { class: "note", style: "margin-top:6px" }, "Monthly averages count only months with at least one work-food purchase. CBRE vending covers the 365 / APRIVA machines before April 1, 2026; JPMC vending is everything after."));
+}
+function renderFoodTop(a, b) {
+  const host = $("#food-top"); host.replaceChildren();
+  $("#food-top-desc").textContent = `The food places you spent the most at from ${a} to ${b}.`;
+  const rs = TX.filter(r => r.d >= a && r.d <= b && FOOD.includes(r.cat));
+  const m = new Map(); rs.forEach(r => { const o = m.get(r.vendor) || { v: 0, n: 0, cat: r.cat }; o.v += r.amt; if (r.amt > 0) o.n++; m.set(r.vendor, o); });
+  const list = [...m].sort((x, y) => y[1].v - x[1].v).slice(0, 15);
+  const used = [...new Set(list.map(([, o]) => o.cat))];
+  host.appendChild(legend(FOOD.filter(c => used.includes(c)).map(c => ({ name: c, color: FOOD_COLOR[c] }))));
+  hbars(host, list.map(([n, o]) => ({ name: n, value: o.v, color: FOOD_COLOR[o.cat], tip: [{ name: "Total", value: money(o.v) }, { name: "Visits", value: String(o.n) }, { name: "Avg", value: money(o.v / Math.max(1, o.n), 2) }, { name: "Type", value: o.cat }] })),
+    it => `${money(it.value)} · ${m.get(it.name).n}×`);
+}
+const PLAN = { lunch: 80, dinner: 70, vend: 50, coffee: 50, lunchCost: 4, dinnerCost: 6 };
+function renderFoodPlan(st) {
+  const host = $("#food-plan"); host.replaceChildren();
+  const c = st.cat, outDin = ["Restaurants", "Fast Food", "Food Delivery"];
+  const dinVisits = sum(outDin.map(k => c[k].visitsMo)), dinSpend = sum(outDin.map(k => c[k].perMo)), dinTicket = dinSpend / Math.max(0.01, dinVisits);
+  const wrap = el("div", { class: "plan" }); const left = el("div"), right = el("div"); wrap.append(left, right); host.appendChild(wrap);
+  const slider = (key, label, sub, min, max, step, fmt) => {
+    const d = el("div", { class: "sl" }); const top = el("div", { class: "top" }); const lab = el("label", { for: "pl-" + key }, label); const val = el("b", {}, fmt(PLAN[key]));
+    top.append(lab, val); const inp = el("input", { type: "range", id: "pl-" + key, min, max, step, value: PLAN[key] });
+    inp.addEventListener("input", () => { PLAN[key] = +inp.value; val.textContent = fmt(PLAN[key]); calc(); });
+    d.append(top, inp, el("div", { class: "sub" }, sub)); left.appendChild(d);
+  };
+  slider("lunch", "Work lunches replaced by meal prep", `You buy about ${c["Work Cafeteria"].visitsMo.toFixed(0)} cafeteria lunches a month at ${money(c["Work Cafeteria"].ticket, 2)} each`, 0, 100, 5, v => v + "%");
+  slider("dinner", "Eating out replaced by cooking at home", `About ${dinVisits.toFixed(0)} restaurant, fast-food and Uber Eats purchases a month at ${money(dinTicket, 2)} each`, 0, 100, 5, v => v + "%");
+  slider("vend", "Vending snacks cut", `About ${c["Work Vending"].visitsMo.toFixed(0)} vending purchases a month at ${money(c["Work Vending"].ticket, 2)} each`, 0, 100, 5, v => v + "%");
+  slider("coffee", "Coffee & bakery stops cut", `About ${c["Coffee & Bakery"].visitsMo.toFixed(0)} a month at ${money(c["Coffee & Bakery"].ticket, 2)} each (smoothies, kolaches, coffee)`, 0, 100, 5, v => v + "%");
+  slider("lunchCost", "Grocery cost per prepped lunch", "Typical meal prep is $3–5 per portion", 2, 10, 0.5, v => money(v, 2));
+  slider("dinnerCost", "Grocery cost per home dinner", "Typical home-cooked dinner is $4–8 per plate", 2, 15, 0.5, v => money(v, 2));
+  const out = el("div"); right.appendChild(out);
+  function calc() {
+    out.replaceChildren();
+    const L = c["Work Cafeteria"].visitsMo * PLAN.lunch / 100, D = dinVisits * PLAN.dinner / 100;
+    const lunchSave = L * (c["Work Cafeteria"].ticket - PLAN.lunchCost), dinSave = D * (dinTicket - PLAN.dinnerCost);
+    const vendSave = c["Work Vending"].perMo * PLAN.vend / 100, coffeeSave = c["Coffee & Bakery"].perMo * PLAN.coffee / 100;
+    const addGroc = L * PLAN.lunchCost + D * PLAN.dinnerCost;
+    const nowB = { "Work lunch": c["Work Cafeteria"].perMo, "Eating out": dinSpend, "Snacks & coffee": c["Work Vending"].perMo + c["Coffee & Bakery"].perMo, "Groceries": c["Groceries"].perMo };
+    const newB = { "Work lunch": c["Work Cafeteria"].perMo - L * c["Work Cafeteria"].ticket, "Eating out": dinSpend - D * dinTicket, "Snacks & coffee": nowB["Snacks & coffee"] - vendSave - coffeeSave, "Groceries": c["Groceries"].perMo + addGroc };
+    const nowT = sum(Object.values(nowB)), newT = sum(Object.values(newB)), save = nowT - newT;
+    out.append(el("div", { class: "l note", style: "font-size:13px" }, "Estimated savings"), el("div", { class: "big-save" }, `${money(save)}/month`),
+      el("div", { class: "note", style: "font-size:13px;margin:4px 0 12px" }, `${money(save * 12)} a year · food goes from ${money(nowT)} to ${money(newT)} a month (${pct(newT / nowT - 1)})`));
+    const keys = Object.keys(nowB), cols = ["var(--s1)", "var(--s3)", "var(--s5)", "var(--s6)"];
+    const chartHost = el("div"); out.appendChild(chartHost);
+    xyChart(chartHost, { labels: ["Now", "With your plan"], bars: keys.map((k, i) => ({ name: k, color: cols[i], values: [nowB[k], Math.max(0, newB[k])] })), stacked: true, height: 240,
+      barLabel: i => money(i ? newT : nowT), aria: "Monthly food cost now versus with the meal-prep plan" });
+    const grocWeek = (c["Groceries"].perMo + addGroc) / 4.33;
+    const tl = el("ul", { class: "recs", style: "margin-top:10px" });
+    [[`Meal prep:`, ` about ${L.toFixed(0)} lunches a month, saving ${money(lunchSave)}.`],
+     [`Cooking at home:`, ` about ${D.toFixed(0)} meals a month you'd no longer buy, saving ${money(dinSave)}.`],
+     [`Snacks & coffee:`, ` saving ${money(vendSave + coffeeSave)}.`],
+     [`Grocery budget:`, ` plan for about ${money(grocWeek)} a week (${money(c["Groceries"].perMo + addGroc)} a month) to cover it.`]]
+      .forEach(([b, t]) => { const li = el("li"); li.append(el("b", {}, b), document.createTextNode(t)); tl.appendChild(li); });
+    out.appendChild(tl);
+    out.appendChild(el("div", { class: "note", style: "margin-top:4px" }, "This treats each purchase as one meal. Restaurant bills that cover other people or drinks make the real savings per meal larger."));
+  }
+  calc();
+}
+function renderFoodIns(st) {
+  const host = $("#food-ins"); host.replaceChildren();
+  const add = (h, big, p) => { const c = el("div", { class: "i" }); c.append(el("div", { class: "h" }, h), el("div", { class: "big" }, big), el("p", {}, p)); host.appendChild(c); };
+  const c = st.cat;
+  const byMonth = ALL_MONTHS.filter(m => m >= "2023-01").map(m => ({ m, v: sum(TX.filter(r => r.ym === m && FOOD.includes(r.cat)).map(r => r.amt)) }));
+  const y23 = byMonth.filter(o => o.m < "2024").map(o => o.v), rec = byMonth.slice(-7, -1).map(o => o.v);
+  add("Food spending is going up", `${money(sum(rec) / rec.length)}/mo`, `Your last 6 full months averaged ${money(sum(rec) / rec.length)} on food, compared with ${money(sum(y23) / y23.length)} a month in 2023 (${pct((sum(rec) / rec.length) / (sum(y23) / y23.length) - 1)}).`);
+  const ue = TX.filter(r => r.vendor === "Uber Eats" && r.amt > 0); const ue23 = ue.filter(r => r.y === 2023).length / 12;
+  add("Uber Eats became a habit", `${c["Food Delivery"].visitsMo.toFixed(1)} orders/mo`, `Averaging ${money(c["Food Delivery"].ticket, 2)} an order, that's ${money(c["Food Delivery"].perMo)} a month in the selected period. In 2023 you ordered about ${ue23.toFixed(1)} times a month. Delivery is the easiest line to cut: an order costs about 4–6 home-cooked dinners.`);
+  add("Restaurants are the biggest line", `${money(c["Restaurants"].perMo)}/mo`, `${c["Restaurants"].visitsMo.toFixed(0)} sit-down meals a month at ${money(c["Restaurants"].ticket, 2)} each. Keeping one or two a week for social plans and cooking the rest would cut this line by more than half.`);
+  const jc = TX.filter(r => r.vendor === "JPMC cafe" && r.amt > 0), cc = TX.filter(r => r.vendor === "CBRE cafe (Wildflower)" && r.amt > 0);
+  const jpmcMs = new Set(jc.map(r => r.ym)).size || 1;
+  add("Lunch at JPMC costs more", `${money(sum(jc.map(r => r.amt)) / jpmcMs)}/mo`, `At JPMC you buy food at the cafe about ${(jc.length / jpmcMs).toFixed(0)} times a month (avg ${money(sum(jc.map(r => r.amt)) / Math.max(1, jc.length), 2)}), plus ${money(sum(TX.filter(r => r.vendor === "JPMC vending").map(r => r.amt)) / jpmcMs)}/mo from vending. At CBRE it was about ${money(sum(cc.map(r => r.amt)) / (new Set(TX.filter(r => r.vendor === "CBRE cafe (Wildflower)" || r.vendor === "CBRE vending").map(r => r.ym)).size || 1))}/mo at the cafe, about ${(cc.length / (new Set(TX.filter(r => r.vendor === "CBRE cafe (Wildflower)" || r.vendor === "CBRE vending").map(r => r.ym)).size || 1)).toFixed(0)} visits. Many JPMC purchases are small add-ons (coffee, creamer, snacks), which meal prep plus bringing coffee would cover.`);
+  const conv = TX.filter(r => r.cat === "Gas & Convenience" && r.amt > 0 && r.amt < 15 && r.d >= foodWindow()[0]);
+  add("Hidden food at gas stations", `${money(sum(conv.map(r => r.amt)) / st.months)}/mo`, `Not counted above: ${(conv.length / st.months).toFixed(0)} purchases under $15 a month at 7-Eleven, Circle K, QuikTrip and similar. Most are probably drinks and snacks. Packing snacks with your meal prep helps here too.`);
+  add("Groceries are only part of the picture", `${money(c["Groceries"].perMo)}/mo`, `Only grocery-store purchases (H-E-B, Kroger, Instacart and so on) count as groceries here. Walmart and Target stay under General Merchandise because the receipts mix food with other things. Once you start cooking, buying groceries at H-E-B or Instacart makes this dashboard track it cleanly.`);
+}
+
 // ------------------------------------------------------------------ wiring
 $("#subtitle").textContent = `${FIRST} to ${LAST} · ${TX.length.toLocaleString()} spending transactions across ${DATA.accounts.length} accounts`;
 seg("year", renderYear); seg("yoy", renderYoy); seg("month", renderMonth); seg("mom", renderMom); seg("vel", renderVel);
@@ -1262,21 +1470,24 @@ function syncFixed() {
 fixedSeg.addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   EXCL = b.dataset.v === "out"; try { localStorage.setItem("spend-fixed", EXCL ? "out" : "in"); } catch (err) {}
-  syncFixed(); hideTip(); $("#panel-deep").hidden ? renderDashboard() : renderDeep();
+  syncFixed(); hideTip(); renderCurrent();
 });
 syncFixed();
 fPeriod.addEventListener("change", renderDashboard); fGroup.addEventListener("change", renderDashboard);
 $("#ven-q").addEventListener("input", renderVTable); $("#tx-q").addEventListener("input", () => renderTx());
-const tabs = [["tab-dash", "panel-dash"], ["tab-deep", "panel-deep"]];
+const tabs = [["tab-dash", "panel-dash"], ["tab-deep", "panel-deep"], ["tab-food", "panel-food"]];
+$("#food-base").addEventListener("change", () => renderFoodTab());
+seg("fmonth", renderFoodMonth);
+const renderCurrent = () => { if (!$("#panel-deep").hidden) renderDeep(); else if (!$("#panel-food").hidden) renderFoodTab(); else renderDashboard(); };
 function selectTab(id) {
   tabs.forEach(([t, p]) => { const on = t === id; $("#" + t).setAttribute("aria-selected", on); $("#" + p).hidden = !on; });
-  if (id === "tab-deep") renderDeep(); else renderDashboard();
+  if (id === "tab-deep") renderDeep(); else if (id === "tab-food") renderFoodTab(); else renderDashboard();
   try { localStorage.setItem("spend-tab", id); } catch (e) {}
 }
 tabs.forEach(([t]) => $("#" + t).addEventListener("click", () => selectTab(t)));
-let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { hideTip(); $("#panel-deep").hidden ? renderDashboard() : renderDeep(); }, 150); });
+let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { hideTip(); renderCurrent(); }, 150); });
 let start = "tab-dash"; try { start = localStorage.getItem("spend-tab") || start; } catch (e) {}
-selectTab(start === "tab-deep" ? "tab-deep" : "tab-dash");
+selectTab(tabs.some(([t]) => t === start) ? start : "tab-dash");
 })();
 </script>
 </body>

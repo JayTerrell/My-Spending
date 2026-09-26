@@ -22,6 +22,9 @@ A switch at the top hides rent and car-loan payments from every chart except **S
 ## Dashboard tab
 Spending by year (plus a same-period comparison for the current year), year over year by month, month by month, month-over-month change, spending velocity (monthly, quarterly and yearly pace), categories, category mix, a category-by-year heatmap, top vendors, a vendor directory and a searchable transaction list. Filter by period and by category group.
 
+## Food tab
+How much goes to food each month (work cafeteria, vending, restaurants, fast food, coffee, Uber Eats, groceries). It includes a CBRE vs. JPMC work-food comparison, top food spots, and a meal-prep savings planner with sliders. Work food rules: Wildflower Cafe is the CBRE cafe, "JPMC" charges are the JPMC cafe, and 365 / APRIVA vending counts as CBRE before April 1, 2026 and JPMC after.
+
 ## Deep dive tab
 Key findings, income vs. spending, essentials vs. discretionary, what grew and what shrank, weekly rhythm, the payday effect, food habits, small purchases, subscriptions, fees and interest, seasonality, purchase size, vendor loyalty, peak months, and recommendations.
 
